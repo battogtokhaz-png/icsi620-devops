@@ -23,7 +23,7 @@ export function createBookingService({ getEquipment, notification }) {
       if (!equipment) fail(404, 'EQUIPMENT_NOT_FOUND', 'Equipment not found');
       if (equipment.status !== 'available') fail(409, 'EQUIPMENT_UNAVAILABLE', 'Equipment unavailable');
       const conflict = reservations.some(r => r.equipmentId === equipmentId && r.status === 'active'
-        && start < Date.parse(r.endAt) && Date.parse(r.startAt) < end);
+        && start <= Date.parse(r.endAt) && Date.parse(r.startAt) < end);
       if (conflict) fail(409, 'RESERVATION_CONFLICT', 'Time slot overlaps');
       const reservation = { id: `R-${reservations.length + 1}`, equipmentId, userId,
         startAt: new Date(start).toISOString(), endAt: new Date(end).toISOString(), status: 'active' };
