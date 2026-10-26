@@ -1,0 +1,25 @@
+<!doctype html><html lang="mn"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ICSI620 — Захиалгын суурь систем</title>
+<style>body{font:16px system-ui;max-width:850px;margin:35px auto;padding:0 18px;color:#172538}label{display:block;margin:12px 0}input,select,button{font:inherit;padding:8px}button{cursor:pointer}pre{background:#f1f5f8;padding:15px;overflow:auto}small{color:#536172}</style>
+<h1>Тоног төхөөрөмжийн захиалга</h1><p>ICSI620 • Нэг процессын сургалтын суурь хувилбар</p>
+<small>Өгөгдөл санах ойд байна. Серверийг дахин асаахад захиалга арилна. Огнооны цаг UTC.</small>
+<form id="form"><label>Төхөөрөмж <select id="equipment"></select></label>
+<label>Хэрэглэгч <input id="user" value="U-01" required></label>
+<label>Эхлэх <input id="start" value="2026-10-05T10:00:00Z" required></label>
+<label>Дуусах <input id="end" value="2026-10-05T11:00:00Z" required></label><button>Захиалах</button></form>
+<p id="message" role="status"></p><h2>Захиалгууд</h2><div id="reservations"></div>
+<h2>Мэдэгдлийн бүртгэл</h2><pre id="notifications"></pre>
+<script type="module">
+async function api(path, body) {
+ const response = await fetch(path, body === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ const data = await response.json(); if(!response.ok) throw new Error(`${response.status}: ${data.code} — ${data.message}`); return data;
+}
+async function refresh(){
+ const rows=await api('/reservations'); const container=document.querySelector('#reservations'); container.replaceChildren();
+ for(const r of rows){const p=document.createElement('p');p.textContent=`${r.id} | ${r.equipmentId} | ${r.startAt} → ${r.endAt} | ${r.status} `;
+ if(r.status==='active'){const b=document.createElement('button');b.textContent='Цуцлах';b.onclick=async()=>{try{await api(`/reservations/${r.id}/cancel`,{});await refresh();}catch(e){document.querySelector('#message').textContent=e.message;}};p.append(b);}container.append(p);}
+ document.querySelector('#notifications').textContent=JSON.stringify(await api('/notifications'),null,2);
+}
+try{for(const e of await api('/equipment')){const o=document.createElement('option');o.value=e.id;o.textContent=`${e.id} — ${e.name} (${e.status})`;document.querySelector('#equipment').append(o);}await refresh();}catch(e){document.querySelector('#message').textContent=e.message;}
+document.querySelector('#form').onsubmit=async(event)=>{event.preventDefault();try{const r=await api('/reservations',{equipmentId:document.querySelector('#equipment').value,userId:document.querySelector('#user').value,startAt:document.querySelector('#start').value,endAt:document.querySelector('#end').value});document.querySelector('#message').textContent=`Үүссэн: ${r.reservationId}`;await refresh();}catch(e){document.querySelector('#message').textContent=e.message;}};
+</script></html>
