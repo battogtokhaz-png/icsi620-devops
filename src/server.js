@@ -5,6 +5,8 @@ import { resolve } from 'node:path';
 import { listEquipment, getEquipment } from './catalog.js';
 import { createNotificationService } from './notification.js';
 import { createBookingService, DomainError } from './booking.js';
+import { loadConfig } from './config.js';
+
 const html = await readFile(new URL('./index.html', import.meta.url), 'utf8');
 async function readJson(req) {
   let size = 0; const chunks = [];
@@ -25,6 +27,7 @@ export function createApp() {
       const path = new URL(req.url, 'http://localhost').pathname;
       if (req.method === 'GET' && path === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(html); }
       if (req.method === 'GET' && path === '/equipment') return send(200, listEquipment());
+      if (req.method === 'GET' && path === '/healthz') return send(200, { status: 'ok' });
       if (req.method === 'GET' && path === '/reservations') return send(200, booking.list());
       if (req.method === 'GET' && path === '/notifications') return send(200, notification.list());
       if (req.method === 'POST' && path === '/reservations') {
@@ -43,5 +46,6 @@ export function createApp() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const server = createApp();
   server.on('error', e => { console.error(e.message); process.exitCode = 1; });
-  server.listen(3000, '127.0.0.1', () => console.log('ICSI620: http://127.0.0.1:3000 (Ctrl+C to stop)'));
+  const { host, port } = loadConfig();
+  server.listen(port, host, () => console.log(`ICSI620: http://${host}:${port} (Ctrl+C to stop)`));
 }
